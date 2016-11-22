@@ -43,6 +43,7 @@ public abstract class EntryBean {
     private SessionContext context;
 
     public String whoAmI() {
+        System.out.println("whoAmI: caller principal: "+context.getCallerPrincipal());
         return context.getCallerPrincipal().getName();
     }
 

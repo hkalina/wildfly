@@ -60,6 +60,9 @@ public class WhoAmIServlet extends HttpServlet {
         if ("whoAmI".equals(method)) {
             LoginContext lc = null;
             try {
+                System.out.println("ServletWhoAmi: remote user: "+req.getRemoteUser());
+                System.out.println("ServletWhoAmi: auth type: "+req.getAuthType());
+
                 if (username != null && password != null) {
                     lc = getCLMLoginContext(username, password);
                     lc.login();

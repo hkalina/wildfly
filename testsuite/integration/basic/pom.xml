@@ -182,7 +182,7 @@
 
                                     <!-- Parameters to test cases. -->
                                     <systemPropertyVariables combine.children="append">
-                                        <jboss.server.config.file.name>standalone-full.xml</jboss.server.config.file.name>
+                                        <jboss.server.config.file.name>standalone-elytron.xml</jboss.server.config.file.name>
                                         <jboss.inst>${basedir}/target/jbossas</jboss.inst>
                                         <!-- Needed for the IIOP tests-->
                                         <com.sun.CORBA.ORBUseDynamicStub>true</com.sun.CORBA.ORBUseDynamicStub>
@@ -240,7 +240,7 @@
 
                                     <!-- Parameters to test cases. -->
                                     <systemPropertyVariables combine.children="append">
-                                        <jboss.server.config.file.name>standalone.xml</jboss.server.config.file.name>
+                                        <jboss.server.config.file.name>standalone-elytron.xml</jboss.server.config.file.name>
                                         <jboss.inst>${basedir}/target/jbossas</jboss.inst>
                                         <!-- EJB client library hack, see WFLY-4973-->
                                         <org.jboss.ejb.client.wildfly-testsuite-hack>true</org.jboss.ejb.client.wildfly-testsuite-hack>
@@ -289,7 +289,7 @@
                                     </includes>
 
                                     <systemPropertyVariables combine.children="append">
-                                        <jboss.server.config.file.name>standalone.xml</jboss.server.config.file.name>
+                                        <jboss.server.config.file.name>standalone-elytron.xml</jboss.server.config.file.name>
                                         <jboss.inst>${basedir}/target/jbossas</jboss.inst>
                                         <!-- EJB client library hack, see WFLY-4973-->
                                         <org.jboss.ejb.client.wildfly-testsuite-hack>true</org.jboss.ejb.client.wildfly-testsuite-hack>
@@ -343,7 +343,7 @@
                                 <configuration>
                                     <redirectTestOutputToFile>false</redirectTestOutputToFile>
                                     <systemPropertyVariables combine.children="append">
-                                        <jboss.server.config.file.name>standalone-full.xml</jboss.server.config.file.name>
+                                        <jboss.server.config.file.name>standalone-elytron.xml</jboss.server.config.file.name>
                                         <!-- EJB client library hack, see WFLY-4973-->
                                         <org.jboss.ejb.client.wildfly-testsuite-hack>true</org.jboss.ejb.client.wildfly-testsuite-hack>
                                     </systemPropertyVariables>
