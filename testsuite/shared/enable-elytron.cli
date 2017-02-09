@@ -16,6 +16,13 @@ embed-server --server-config=standalone.xml
 /core-service=management/security-realm=ApplicationRealm/authentication=properties:remove
 /core-service=management/security-realm=ApplicationRealm/authorization=properties:remove
 
+/subsystem=elytron/authentication-configuration=acc1:add(authentication-name=sa,credential-reference={clear-text=sa})
+/subsystem=elytron/authentication-context=ac1:add(match-rules=[{authentication-configuration=acc1}])
+/subsystem=datasources/data-source=ExampleDS:undefine-attribute(name=password)
+/subsystem=datasources/data-source=ExampleDS:undefine-attribute(name=user-name)
+/subsystem=datasources/data-source=ExampleDS:write-attribute(name=elytron-enabled,value=true)
+/subsystem=datasources/data-source=ExampleDS:write-attribute(name=authentication-context,value=ac1)
+
 reload
 stop-embedded-server
 
@@ -50,6 +57,12 @@ embed-server --server-config=standalone-full.xml
 /subsystem=datasources/data-source=ExampleDS:write-attribute(name=elytron-enabled,value=true)
 /subsystem=datasources/data-source=ExampleDS:write-attribute(name=authentication-context,value=ac1)
 
+/subsystem=elytron/authentication-configuration=acc2:add(authentication-name=sa,credential-reference={clear-text=sa})
+/subsystem=elytron/authentication-context=ac2:add(match-rules=[{authentication-configuration=acc2}])
+/subsystem=iiop-openjdk:undefine-attribute(name=security-domain)
+/subsystem=iiop-openjdk/:write-attribute(name=security,value=elytron)
+/subsystem=iiop-openjdk/:write-attribute(name=authentication-context,value=ac2)
+# TODO SSL
 
 reload
 stop-embedded-server
