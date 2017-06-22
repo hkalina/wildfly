@@ -254,7 +254,7 @@ public class AuthenticationTestCase {
             getWhoAmI("?method=doubleWhoAmI&username=user2&password=bad_password");
             fail("Expected IOException");
         } catch (IOException e) {
-            assertTrue(e.getMessage().contains("javax.ejb.EJBAccessException"));
+            assertTrue(e.getMessage(), e.getMessage().contains("javax.ejb.EJBAccessException"));
         }
     }
 

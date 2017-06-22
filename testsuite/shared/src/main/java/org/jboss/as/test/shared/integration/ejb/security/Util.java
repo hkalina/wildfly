@@ -24,7 +24,6 @@ package org.jboss.as.test.shared.integration.ejb.security;
 import static org.junit.Assert.assertTrue;
 
 import javax.ejb.EJBAccessException;
-import javax.ejb.EJBException;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -276,15 +275,7 @@ public class Util {
     }
 
     private static void validateException(final Exception e, final boolean initialAuthSucceeded) {
-        if (SecurityDomain.getCurrent() != null) {
-            if (initialAuthSucceeded) {
-                assertTrue("Expected EJBException due to bad password not thrown.", e instanceof EJBException && e.getCause() instanceof SecurityException);
-            } else {
-                assertTrue("Expected SecurityException due to bad password not thrown.", e instanceof SecurityException);
-            }
-        } else {
-            assertTrue("Expected EJBAccessException due to bad password not thrown. (EJB 3.1 FR 17.6.9)", e instanceof EJBAccessException);
-        }
+        assertTrue("Expected EJBAccessException due to bad password not thrown. (EJB 3.1 FR 17.6.9)", e instanceof EJBAccessException);
     }
 
     /**

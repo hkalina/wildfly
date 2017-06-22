@@ -26,6 +26,7 @@ import static org.jboss.as.ejb3.tx.util.StatusHelper.statusAsString;
 import java.rmi.RemoteException;
 import java.util.Random;
 
+import javax.ejb.EJBAccessException;
 import javax.ejb.EJBException;
 import javax.ejb.EJBTransactionRolledbackException;
 import javax.ejb.NoSuchEJBException;
@@ -184,6 +185,8 @@ public class CMTTxInterceptor implements Interceptor {
                 Throwable cause = t;
                 t = EjbLogger.ROOT_LOGGER.unexpectedError();
                 t.initCause(cause);
+            } else if (t instanceof SecurityException) {
+                t = new EJBAccessException(t.getMessage());
             } else if (t instanceof RuntimeException) {
                 t = new EJBException((Exception) t);
             } else {
