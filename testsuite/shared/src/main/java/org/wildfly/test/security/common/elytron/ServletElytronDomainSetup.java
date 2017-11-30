@@ -43,23 +43,21 @@ import org.wildfly.extension.elytron.ElytronExtension;
  *
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
  */
-public class EjbElytronDomainSetup implements ServerSetupTask {
+public class ServletElytronDomainSetup implements ServerSetupTask {
 
     private static final String DEFAULT_SECURITY_DOMAIN_NAME = "elytron-tests";
 
-    private PathAddress saslAuthenticationAddress;
+    private PathAddress httpAuthenticationAddress;
 
-    private PathAddress remotingConnectorAddress;
-
-    private PathAddress ejbDomainAddress;
+    private PathAddress undertowDomainAddress;
 
     private final String securityDomainName;
 
-    public EjbElytronDomainSetup() {
+    public ServletElytronDomainSetup() {
         this(DEFAULT_SECURITY_DOMAIN_NAME);
     }
 
-    public EjbElytronDomainSetup(final String securityDomainName) {
+    public ServletElytronDomainSetup(final String securityDomainName) {
         this.securityDomainName = securityDomainName;
     }
 
@@ -67,36 +65,27 @@ public class EjbElytronDomainSetup implements ServerSetupTask {
         return securityDomainName;
     }
 
-    protected String getSecurityRealmName() {
-        return getSecurityDomainName() + "-ejb3-UsersRoles";
-    }
-
-
-    protected String getEjbDomainName() {
+    protected String getUndertowDomainName() {
         return getSecurityDomainName();
     }
 
-    protected String getSaslAuthenticationName() {
+    protected String getHttpAuthenticationName() {
         return getSecurityDomainName();
     }
 
-    protected String getRemotingConnectorName() {
-        return "http-remoting-connector";
+    protected String getDeploymentSecurityDomain() {
+        return getSecurityDomainName();
     }
 
     @Override
     public void setup(final ManagementClient managementClient, final String containerId) throws Exception {
-        saslAuthenticationAddress = PathAddress.pathAddress()
+        httpAuthenticationAddress = PathAddress.pathAddress()
                 .append(SUBSYSTEM, ElytronExtension.SUBSYSTEM_NAME)
-                .append("sasl-authentication-factory", getSaslAuthenticationName());
+                .append("http-authentication-factory", getHttpAuthenticationName());
 
-        remotingConnectorAddress = PathAddress.pathAddress()
-                .append(SUBSYSTEM, "remoting")
-                .append("http-connector", getRemotingConnectorName());
-
-        ejbDomainAddress = PathAddress.pathAddress()
-                .append(SUBSYSTEM, "ejb3")
-                .append("application-security-domain", getEjbDomainName());
+        undertowDomainAddress = PathAddress.pathAddress()
+                .append(SUBSYSTEM, "undertow")
+                .append("application-security-domain", getUndertowDomainName());
 
         final ModelNode compositeOp = new ModelNode();
         compositeOp.get(OP).set(ModelDescriptionConstants.COMPOSITE);
@@ -104,24 +93,16 @@ public class EjbElytronDomainSetup implements ServerSetupTask {
 
         ModelNode steps = compositeOp.get(STEPS);
 
-        // /subsystem=elytron/sasl-authentication-factory=ejb3-tests-auth-fac:add(sasl-server-factory=configured,security-domain=EjbDomain,mechanism-configurations=[{mechanism-name=BASIC}])
-        ModelNode addSaslAuthentication = Util.createAddOperation(saslAuthenticationAddress);
-        addSaslAuthentication.get("sasl-server-factory").set("configured");
-        addSaslAuthentication.get("security-domain").set(getSecurityDomainName());
-        addSaslAuthentication.get("mechanism-configurations").get(0).get("mechanism-name").set("JBOSS-LOCAL-USER");
-        addSaslAuthentication.get("mechanism-configurations").get(0).get("realm-mapper").set("local");
-        addSaslAuthentication.get("mechanism-configurations").get(1).get("mechanism-name").set("DIGEST-MD5");
-        addSaslAuthentication.get("mechanism-configurations").get(1).get("mechanism-realm-configurations").get(0).get("realm-name").set(getSecurityRealmName());
-        steps.add(addSaslAuthentication);
+        ModelNode addHttpAuthentication = Util.createAddOperation(httpAuthenticationAddress);
+        addHttpAuthentication.get("security-domain").set(getSecurityDomainName());
+        addHttpAuthentication.get("http-server-mechanism-factory").set("global");
+        addHttpAuthentication.get("mechanism-configurations").get(0).get("mechanism-name").set("BASIC");
+        addHttpAuthentication.get("mechanism-configurations").get(0).get("mechanism-realm-configurations").get(0).get("realm-name").set("TestingRealm");
+        steps.add(addHttpAuthentication);
 
-        // remoting connection with sasl-authentication-factory
-        ModelNode updateRemotingConnector = Util.getWriteAttributeOperation(remotingConnectorAddress, "sasl-authentication-factory", getSaslAuthenticationName());
-        steps.add(updateRemotingConnector);
-
-        // /subsystem=ejb3/application-security-domain=ejb3-tests:add(security-domain=ApplicationDomain)
-        ModelNode addEjbDomain = Util.createAddOperation(ejbDomainAddress);
-        addEjbDomain.get("security-domain").set(getSecurityDomainName());
-        steps.add(addEjbDomain);
+        ModelNode addUndertowDomain = Util.createAddOperation(undertowDomainAddress);
+        addUndertowDomain.get("http-authentication-factory").set(getHttpAuthenticationName());
+        steps.add(addUndertowDomain);
 
         applyUpdate(managementClient.getControllerClient(), compositeOp, false);
         // TODO: add {"allow-resource-service-restart" => true} to ejbRemoteAddress write-attribute operation once WFLY-8793 / JBEAP-10955 is fixed
@@ -131,11 +112,6 @@ public class EjbElytronDomainSetup implements ServerSetupTask {
 
     @Override
     public void tearDown(final ManagementClient managementClient, final String containerId) {
-        try {
-            applyUpdate(managementClient.getControllerClient(), Util.getWriteAttributeOperation(remotingConnectorAddress, "sasl-authentication-factory", "application-sasl-authentication"), false);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
         // TODO: add {"allow-resource-service-restart" => true} to ejbRemoteAddress write-attribute operation once WFLY-8793 / JBEAP-10955 is fixed
         //       and remove this reload
         try {
@@ -144,14 +120,14 @@ public class EjbElytronDomainSetup implements ServerSetupTask {
             throw new RuntimeException(e);
         }
 
-        applyRemoveAllowReload(managementClient.getControllerClient(), ejbDomainAddress, false);
+        applyRemoveAllowReload(managementClient.getControllerClient(), undertowDomainAddress, false);
+        applyRemoveAllowReload(managementClient.getControllerClient(), httpAuthenticationAddress, false);
         // TODO: remove this reload once WFLY-8821 / JBEAP-11074 is fixed
         try {
             ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        applyRemoveAllowReload(managementClient.getControllerClient(), saslAuthenticationAddress, false);
     }
 
 }
